@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../auth_provider.dart';
 import 'register_screen.dart';
-
+import 'doctor_dashboard.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
   @override
@@ -20,7 +20,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if(success){
       if(authprovider.role=='doctor'){
-        print('Navigate to Doctor Dashbord');
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DoctorDashboard())
+        );
       }else{
         print('Navigate to Patient Dashbord');
       }
