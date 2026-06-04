@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:internship/screens/login_screen.dart';
 import 'package:provider/provider.dart';
 import '../auth_provider.dart';
-// import 'api_service.dart'; // Adjust path if needed
+import '../api_service.dart';
 import 'login_screen.dart';
 class DoctorDashboard extends StatefulWidget {
   const DoctorDashboard({super.key});
@@ -15,7 +15,6 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
   final patientEmailController = TextEditingController();
   final notesController = TextEditingController();
 
-  // DYNAMIC LIST to hold multiple medicines
   List<Map<String, TextEditingController>> medicines = [];
 
   bool isSaving = false;
@@ -23,13 +22,11 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
   @override
   void initState() {
     super.initState();
-    // Start with one empty medicine block by default
     addMedicine();
   }
 
   @override
   void dispose() {
-    // Clean up all controllers to prevent memory leaks
     patientEmailController.dispose();
     notesController.dispose();
     for (var med in medicines) {
@@ -40,7 +37,6 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
     super.dispose();
   }
 
-  // --- DYNAMIC FORM LOGIC ---
   void addMedicine() {
     setState(() {
       medicines.add({
@@ -53,7 +49,6 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
 
   void removeMedicine(int index) {
     setState(() {
-      // Dispose controllers before removing to free memory
       medicines[index]['name']?.dispose();
       medicines[index]['timing']?.dispose();
       medicines[index]['schedule']?.dispose();
@@ -61,44 +56,34 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
     });
   }
 
-  // --- SUBMIT LOGIC ---
   void submitVisit() async {
-    // Validate basic fields
     if (patientEmailController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Patient Email is required')));
       return;
     }
-
     setState(() { isSaving = true; });
-
-    // 1. Map the dynamic controllers into a JSON-friendly list
     List<Map<String, String>> medicinesPayload = medicines.map((med) {
       return {
         "name": med['name']!.text.trim(),
         "timing": med['timing']!.text.trim(),
         "schedule": med['schedule']!.text.trim()
       };
-    }).where((med) => med['name']!.isNotEmpty).toList(); // Ignore empty medicine rows
+    }).where((med) => med['name']!.isNotEmpty).toList();
 
-    // 2. Prepare the full payload
     Map<String, dynamic> visitData = {
       "patientEmail": patientEmailController.text.trim(),
       "notes": notesController.text.trim(),
       "medicines": medicinesPayload
     };
 
-    // 3. Call the API (Uncomment when ApiService is imported)
-    /*
     try {
       bool success = await ApiService().createVisit(visitData);
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Visit saved successfully!')));
 
-        // Reset the form
         patientEmailController.clear();
         notesController.clear();
         setState(() {
-          // Clear old medicines and start fresh with 1 empty block
           for (var med in medicines) {
             med['name']?.dispose();
             med['timing']?.dispose();
@@ -113,7 +98,6 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
-    */
 
     setState(() { isSaving = false; });
   }

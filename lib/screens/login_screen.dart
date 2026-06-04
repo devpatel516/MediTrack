@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../auth_provider.dart';
 import 'register_screen.dart';
 import 'doctor_dashboard.dart';
+import 'patient_dashboard.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
   @override
@@ -25,7 +26,10 @@ class _LoginScreenState extends State<LoginScreen> {
             MaterialPageRoute(builder: (context) => const DoctorDashboard())
         );
       }else{
-        print('Navigate to Patient Dashbord');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context)=>PatientDashboard())
+        );
       }
     }else{
       ScaffoldMessenger.of(context).showSnackBar(
