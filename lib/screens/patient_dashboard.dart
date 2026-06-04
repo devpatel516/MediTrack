@@ -72,7 +72,6 @@ class _PatientDashboardState extends State<PatientDashboard> {
           itemCount: history.length,
           itemBuilder: (context,index){
             final visit=history[index];
-
             final doctorName = visit['doctorId']?['name'] ?? 'Unknown Doctor';
             List<dynamic> medicines;
             if (visit['medicines'] != null) {
@@ -99,7 +98,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                           ),
                           Text(
                             doctorName,
-                            style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.grey),
+                            style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.black),
                           ),
                         ],
                       ),
@@ -144,6 +143,14 @@ class _PatientDashboardState extends State<PatientDashboard> {
                             ),
                           );
                         }).toList(),
+                      SizedBox(height:20),
+                      Row(
+                        children: [
+                          Text('Next Visit : ',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 16)),
+                          Text(formatDate(visit['nextVisitDate'] ?? 'Not Applicable'),
+                          style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold),)
+                        ],
+                      ),
                     ],
                   ),
               ),

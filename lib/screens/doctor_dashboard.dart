@@ -16,7 +16,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
   final notesController = TextEditingController();
 
   List<Map<String, TextEditingController>> medicines = [];
-
+  DateTime? selectedDate;
   bool isSaving = false;
 
   @override
@@ -73,7 +73,8 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
     Map<String, dynamic> visitData = {
       "patientEmail": patientEmailController.text.trim(),
       "notes": notesController.text.trim(),
-      "medicines": medicinesPayload
+      "medicines": medicinesPayload,
+      "nextVisitDate":selectedDate
     };
 
     try {
@@ -100,6 +101,14 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
     }
 
     setState(() { isSaving = false; });
+  }
+
+  String formatDate(DateTime date) {
+    try {
+      return "${date.day}/${date.month}/${date.year}";
+    } catch (e) {
+      return "";
+    }
   }
 
   @override
@@ -201,7 +210,6 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                 );
               },
             ),
-
             // ADD MEDICINE BUTTON
             TextButton.icon(
               onPressed: addMedicine,
@@ -209,8 +217,25 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
               label: const Text("Add Another Medicine", style: TextStyle(color: Colors.blue)),
             ),
 
-            const SizedBox(height: 30),
-
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                ElevatedButton(onPressed: ()async{
+                  final DateTime? picked=await showDatePicker(
+                      context: context, firstDate: DateTime(2000), lastDate: DateTime(2100),initialDate: DateTime.now());
+                  if(picked!=null){
+                    setState(() {
+                      selectedDate=picked;
+                    });
+                  }
+                }, child: Text('Pick Date')),
+                SizedBox(width: 16,),
+                Text(selectedDate==null?'No date selected':formatDate(selectedDate!),
+                  style: TextStyle(fontSize: 16),
+                )
+              ],
+            ),
+            const SizedBox(height: 20),
             isSaving
                 ? const Center(child: CircularProgressIndicator())
                 : SizedBox(
