@@ -7,7 +7,7 @@
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>Internship</string>
+		<string>MediTrack</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
@@ -68,5 +68,9 @@
 		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>NSMicrophoneUsageDescription</key>
+        <string>We need access to your microphone for dictating doctor notes.</string>
+        <key>NSSpeechRecognitionUsageDescription</key>
+        <string>We need speech recognition permission to convert your voice into text notes.</string>
 	</dict>
 </plist>

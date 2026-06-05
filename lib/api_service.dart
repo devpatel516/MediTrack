@@ -77,6 +77,23 @@ class ApiService{
     }
   }
 
+  Future<Map<String, dynamic>> aiService(String transcript) async{
+    String? token = await storage.read(key: 'jwt_token');
+    final response = await http.post(
+      Uri.parse('$baseUrl/visits/ai'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({"transcript":transcript})
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Server Error ${response.statusCode}: ${response.body}');
+    }
+  }
+
   Future<void> logout() async {
     await storage.deleteAll();
   }

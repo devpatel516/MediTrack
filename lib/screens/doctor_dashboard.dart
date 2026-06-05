@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:internship/screens/login_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../auth_provider.dart';
 import '../api_service.dart';
 import 'login_screen.dart';
+
 class DoctorDashboard extends StatefulWidget {
   const DoctorDashboard({super.key});
 
@@ -14,15 +15,73 @@ class DoctorDashboard extends StatefulWidget {
 class _DoctorDashboardState extends State<DoctorDashboard> {
   final patientEmailController = TextEditingController();
   final notesController = TextEditingController();
-
+  late Future<List<dynamic>> notes;
   List<Map<String, TextEditingController>> medicines = [];
   DateTime? selectedDate;
   bool isSaving = false;
 
+  late stt.SpeechToText speech;
+  bool isListening = false;
+  String voiceTranscript = "";
+  bool speechAvailable = false;
+  String previousWords = "";
+  bool extracting=false;
   @override
   void initState() {
     super.initState();
     addMedicine();
+    initSpeech(); // Make sure to call this to initialize the mic!
+  }
+
+  void initSpeech() async {
+    speech = stt.SpeechToText();
+    try {
+      speechAvailable = await speech.initialize(
+        // --- FIX 1: UPDATE UI WHEN ENGINE STOPS ITSELF ---
+        onStatus: (status) {
+          print('Speech Status: $status');
+          if (status == 'done' || status == 'notListening') {
+            setState(() {
+              isListening = false; // Turns the mic button back to blue!
+            });
+          }
+        },
+        onError: (errorNotification) => print('Speech Error: $errorNotification'),
+      );
+      setState(() {});
+    } catch (e) {
+      print("Speech initialization failed: $e");
+    }
+  }
+
+  void listen() async {
+    if (!isListening && speechAvailable) {
+      setState(() {
+        isListening = true;
+        // 1. SAVE THE OLD WORDS BEFORE STARTING A NEW SESSION
+        previousWords = voiceTranscript;
+      });
+
+      speech.listen(
+          pauseFor: const Duration(seconds: 10),
+          listenFor: const Duration(minutes: 1),
+          partialResults: true,
+          onResult: (result) {
+            setState(() {
+              // 2. GLUE THE OLD WORDS AND NEW WORDS TOGETHER
+              if (previousWords.isEmpty) {
+                voiceTranscript = result.recognizedWords;
+              } else {
+                // Add a space between the old sentence and the new sentence
+                voiceTranscript = "$previousWords ${result.recognizedWords}";
+              }
+            });
+          }
+      );
+    } else {
+      setState(() => isListening = false);
+      speech.stop();
+    }
   }
 
   @override
@@ -55,13 +114,34 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       medicines.removeAt(index);
     });
   }
-
+  void extract() async{
+    if (voiceTranscript.trim().isEmpty) return;
+    setState(() {
+      extracting=true;
+    });
+    try{
+      final Map<String, dynamic> result = await ApiService().aiService(voiceTranscript);
+      setState(() {
+        String diagnosis = result['diagnosis'] ?? 'No diagnosis found';
+        String notes = result['notes'] ?? '';
+        notesController.text = "Diagnosis: $diagnosis\n\nNotes: $notes".trim();
+        extracting = false;
+      });
+      print('here in dd');
+    }catch(e){
+      setState(() {
+        extracting = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
   void submitVisit() async {
     if (patientEmailController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Patient Email is required')));
       return;
     }
     setState(() { isSaving = true; });
+
     List<Map<String, String>> medicinesPayload = medicines.map((med) {
       return {
         "name": med['name']!.text.trim(),
@@ -74,7 +154,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       "patientEmail": patientEmailController.text.trim(),
       "notes": notesController.text.trim(),
       "medicines": medicinesPayload,
-      "nextVisitDate":selectedDate
+      "nextVisitDate": selectedDate?.toIso8601String(),
     };
 
     try {
@@ -92,6 +172,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
           }
           medicines.clear();
           addMedicine();
+          selectedDate = null; // Reset date picker too
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to save visit.')));
@@ -149,6 +230,82 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
             ),
             const SizedBox(height: 15),
 
+            // ==========================================
+            // AI VOICE EXTRACTOR CARD (FIXED LAYOUT)
+            // ==========================================
+            Card(
+              color: isListening ? Colors.red.shade50 : Colors.blue.shade50,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Voice Extractor', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text(
+                                isListening ? "Listening... Speak now" : "Tap mic to start dictating",
+                                style: TextStyle(color: isListening ? Colors.red : Colors.grey.shade700, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                          // Moved the Mic button out of the column so it aligns to the right!
+                          FloatingActionButton(
+                            onPressed: listen,
+                            mini: true,
+                            backgroundColor: isListening ? Colors.red : Colors.blue,
+                            child: Icon(isListening ? Icons.mic : Icons.mic_none, color: Colors.white),
+                          ),
+                          FloatingActionButton(
+                            onPressed: (){
+                              setState(() {
+                                previousWords="";
+                                voiceTranscript="";
+                              });
+                            },
+                            mini: true,
+                            child: Icon(Icons.cancel, color: Colors.blue),
+                          )
+                        ],
+                      ),
+
+                      // Added this block to actually show the text the doctor is speaking
+                      if (voiceTranscript.isNotEmpty) ...[
+                        const SizedBox(height: 15),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.blue.shade100)
+                          ),
+                          child: Text(
+                            voiceTranscript,
+                            style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 20),
+                      extracting ? Center(child:CircularProgressIndicator(),) :
+                      ElevatedButton.icon(
+                        onPressed: isListening ? null : () {
+                          extract();
+                        },
+                        icon: const Icon(Icons.auto_awesome),
+                        label: const Text("Extract Notes"),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.amber.shade700, foregroundColor: Colors.white),
+                      )
+                    ],
+                  )),
+            ),
+            const SizedBox(height: 15),
+
             TextField(
               controller: notesController,
               maxLines: 3,
@@ -162,8 +319,8 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
 
             // --- DYNAMIC MEDICINE LIST BUILDER ---
             ListView.builder(
-              shrinkWrap: true, // Needed inside SingleChildScrollView
-              physics: const NeverScrollableScrollPhysics(), // Disables inner scrolling
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
               itemCount: medicines.length,
               itemBuilder: (context, index) {
                 return Card(
@@ -174,7 +331,6 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        // Remove Button (Only show if there's more than 1 medicine)
                         if (medicines.length > 1)
                           InkWell(
                             onTap: () => removeMedicine(index),
@@ -210,6 +366,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                 );
               },
             ),
+
             // ADD MEDICINE BUTTON
             TextButton.icon(
               onPressed: addMedicine,
@@ -218,24 +375,35 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
             ),
 
             const SizedBox(height: 20),
+
+            // DATE PICKER
             Row(
               children: [
-                ElevatedButton(onPressed: ()async{
-                  final DateTime? picked=await showDatePicker(
-                      context: context, firstDate: DateTime(2000), lastDate: DateTime(2100),initialDate: DateTime.now());
-                  if(picked!=null){
-                    setState(() {
-                      selectedDate=picked;
-                    });
-                  }
-                }, child: Text('Pick Date')),
-                SizedBox(width: 16,),
-                Text(selectedDate==null?'No date selected':formatDate(selectedDate!),
-                  style: TextStyle(fontSize: 16),
+                ElevatedButton.icon(
+                    onPressed: () async {
+                      final DateTime? picked = await showDatePicker(
+                          context: context,
+                          firstDate: DateTime.now(), // Fixed so doctor can't pick a past date for next visit
+                          lastDate: DateTime(2100),
+                          initialDate: DateTime.now());
+                      if (picked != null) {
+                        setState(() {
+                          selectedDate = picked;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.calendar_today),
+                    label: const Text('Pick Follow-up Date')
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  selectedDate == null ? 'No date selected' : formatDate(selectedDate!),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 )
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
+
             isSaving
                 ? const Center(child: CircularProgressIndicator())
                 : SizedBox(
