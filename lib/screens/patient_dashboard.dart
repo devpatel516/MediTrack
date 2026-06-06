@@ -36,16 +36,16 @@ class _PatientDashboardState extends State<PatientDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('My Medical History'),
-        backgroundColor: Colors.blue,
+        title: Text('My Medical History',style: TextStyle(fontWeight: FontWeight.bold,color: Colors.white),),
+        backgroundColor: Color.fromRGBO(44, 162, 158, 1.0),
         elevation: 0,
         actions: [
           IconButton(onPressed: (){
             Provider.of<AuthProvider>(context,listen: false).logout();
             Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>LoginScreen()));
-          }, icon: Icon(Icons.logout))
+          }, icon: Icon(Icons.logout,color: Colors.white,))
         ],
       ),
 
@@ -94,23 +94,23 @@ class _PatientDashboardState extends State<PatientDashboard> {
                         children: [
                           Text(
                             formatDate(visit['createdAt'] ?? ''),
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue),
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color.fromRGBO(44, 162, 158, 1.0)),
                           ),
                           Text(
                             doctorName,
-                            style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.black),
+                            style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.black,fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),
                       Divider(height: 30,thickness: 1),
                       if (visit['notes'] != null && visit['notes'].toString().isNotEmpty) ...[
-                        const Text("Diagnosis / Notes:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const Text("Diagnosis / Notes:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16,color: Color.fromRGBO(44, 162, 158, 1.0))),
                         const SizedBox(height: 5),
-                        Text(visit['notes'], style: TextStyle(color: Colors.grey[800])),
+                        Text(visit['notes'], style: TextStyle(color: Colors.grey[800],fontSize: 16)),
                         const SizedBox(height: 20),
                       ],
 
-                      const Text("Prescriptions:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      const Text("Prescriptions:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16,color: Color.fromRGBO(44, 162, 158, 1.0))),
                       const SizedBox(height: 10),
 
                       if (medicines.isEmpty)
@@ -127,7 +127,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.medication, color: Colors.blue),
+                                const Icon(Icons.medication, color: Color.fromRGBO(44, 162, 158, 1.0)),
                                 const SizedBox(width: 15),
                                 Expanded(
                                   child: Column(
@@ -135,7 +135,7 @@ class _PatientDashboardState extends State<PatientDashboard> {
                                     children: [
                                       Text(med['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                       const SizedBox(height: 4),
-                                      Text("${med['schedule']}  •  ${med['timing']}", style: TextStyle(color: Colors.grey[700], fontSize: 14)),
+                                      Text("${med['schedule']}  •  ${med['timing']}", style: TextStyle(color: Colors.grey[700], fontSize: 16)),
                                     ],
                                   ),
                                 ),
@@ -146,9 +146,9 @@ class _PatientDashboardState extends State<PatientDashboard> {
                       SizedBox(height:20),
                       Row(
                         children: [
-                          Text('Next Visit : ',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 16)),
+                          Text('Next Visit : ',style: TextStyle(fontWeight: FontWeight.bold,fontSize: 16,color: Color.fromRGBO(44, 162, 158, 1.0))),
                           Text(formatDate(visit['nextVisitDate'] ?? 'Not Applicable'),
-                          style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold),)
+                          style: TextStyle(fontSize: 16,fontWeight: FontWeight.bold,color: Color.fromRGBO(44, 162, 158, 1.0)),)
                         ],
                       ),
                     ],
