@@ -3,7 +3,7 @@ import 'package:internship/screens/login_screen.dart';
 import 'package:provider/provider.dart';
 import '../auth_provider.dart';
 import '../api_service.dart';
-
+import 'package:awesome_notifications/awesome_notifications.dart';
 class PatientDashboard extends StatefulWidget {
   const PatientDashboard({super.key});
 
@@ -14,13 +14,37 @@ class PatientDashboard extends StatefulWidget {
 class _PatientDashboardState extends State<PatientDashboard> {
 
   late Future<List<dynamic>> patientHistory;
+  void syncPatientNotifications(List<dynamic> patientVisits) {
+    for (var visit in patientVisits) {
+      if (visit['nextVisitDate'] != null) {
+        DateTime appointmentDate = DateTime.parse(visit['nextVisitDate']);
+        DateTime alarmTime = appointmentDate.subtract(const Duration(days: 1));
 
+        if (alarmTime.isAfter(DateTime.now())) {
+          AwesomeNotifications().createNotification(
+            content: NotificationContent(
+              id: appointmentDate.millisecondsSinceEpoch.remainder(100000),
+              channelKey: 'appointment_channel',
+              title: 'Doctor Appointment Tomorrow! 🩺',
+              body: 'Reminder: You have an appointment scheduled for tomorrow.',
+            ),
+            schedule: NotificationCalendar.fromDate(date: alarmTime),
+          );
+        }
+      }
+    }
+  }
   void initState(){
     super.initState();
 
     final authProvider=Provider.of<AuthProvider>(context,listen: false);
     final String patientId=authProvider.userId!;
     patientHistory=ApiService().getPatientHistory(patientId);
+    patientHistory.then((visits) {
+      syncPatientNotifications(visits);
+    }).catchError((error) {
+      print("Error syncing notifications: $error");
+    });
   }
 
   String formatDate(String dateString) {
@@ -45,7 +69,21 @@ class _PatientDashboardState extends State<PatientDashboard> {
           IconButton(onPressed: (){
             Provider.of<AuthProvider>(context,listen: false).logout();
             Navigator.pushReplacement(context,MaterialPageRoute(builder: (context)=>LoginScreen()));
-          }, icon: Icon(Icons.logout,color: Colors.white,))
+          }, icon: Icon(Icons.logout,color: Colors.white,)),
+          IconButton(
+              onPressed: () {
+                AwesomeNotifications().createNotification(
+                  content: NotificationContent(
+                    id: 999,
+                    channelKey: 'appointment_channel',
+                    title: 'Test Notification!',
+                    body: 'Test Appointment',
+                    notificationLayout: NotificationLayout.Default,
+                  ),
+                );
+              },
+              icon: const Icon(Icons.notifications_active, color: Colors.amber)
+          ),
         ],
       ),
 

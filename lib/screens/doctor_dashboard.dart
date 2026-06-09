@@ -4,7 +4,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../auth_provider.dart';
 import '../api_service.dart';
 import 'login_screen.dart';
-
+import 'package:awesome_notifications/awesome_notifications.dart';
 class DoctorDashboard extends StatefulWidget {
   const DoctorDashboard({super.key});
 
@@ -160,6 +160,20 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
     try {
       bool success = await ApiService().createVisit(visitData);
       if (success) {
+        if (selectedDate != null) {
+          DateTime alarmTime = selectedDate!.subtract(const Duration(days: 1));
+          if (alarmTime.isAfter(DateTime.now())) {
+            AwesomeNotifications().createNotification(
+              content: NotificationContent(
+                id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+                channelKey: 'appointment_channel',
+                title: 'Appointment Reminder 🩺',
+                body: 'You have a patient visit scheduled for tomorrow!',
+              ),
+              schedule: NotificationCalendar.fromDate(date: alarmTime),
+            );
+          }
+        }
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Visit saved successfully!')));
 
         patientEmailController.clear();
