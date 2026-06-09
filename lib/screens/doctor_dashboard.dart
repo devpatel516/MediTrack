@@ -4,6 +4,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../auth_provider.dart';
 import '../api_service.dart';
 import 'login_screen.dart';
+import 'doctor_appointments_screen.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 class DoctorDashboard extends StatefulWidget {
   const DoctorDashboard({super.key});
@@ -217,6 +218,16 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
         title: const Text("Doctor Dashboard",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
         backgroundColor: Color.fromRGBO(44, 162, 158, 1.0),
         actions: [
+          IconButton(
+            color: Colors.white,
+            icon: const Icon(Icons.list_alt), // The new list icon
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const DoctorAppointmentsScreen()),
+              );
+            },
+          ),
           IconButton(
             color: Colors.white,
             icon: const Icon(Icons.logout),
