@@ -4,7 +4,7 @@ import 'package:internship/screens/login_screen.dart';
 import 'package:provider/provider.dart';
 import 'auth_provider.dart';
 import 'screens/splash_screen.dart';
-
+import 'screens/auth_check.dart';
 const Color brandTeal = Color.fromRGBO(44, 162, 158, 1.0);
 
 void main() async{
@@ -47,7 +47,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: .fromSeed(seedColor: Colors.blueAccent),
       ),
-      home: LoginScreen(),
+      home:AuthCheck(),
     );
   }
 }

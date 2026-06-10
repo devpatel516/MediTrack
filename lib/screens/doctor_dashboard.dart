@@ -31,19 +31,18 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
   void initState() {
     super.initState();
     addMedicine();
-    initSpeech(); // Make sure to call this to initialize the mic!
+    initSpeech();
   }
 
   void initSpeech() async {
     speech = stt.SpeechToText();
     try {
       speechAvailable = await speech.initialize(
-        // --- FIX 1: UPDATE UI WHEN ENGINE STOPS ITSELF ---
         onStatus: (status) {
           print('Speech Status: $status');
           if (status == 'done' || status == 'notListening') {
             setState(() {
-              isListening = false; // Turns the mic button back to blue!
+              isListening = false;
             });
           }
         },
@@ -59,7 +58,6 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
     if (!isListening && speechAvailable) {
       setState(() {
         isListening = true;
-        // 1. SAVE THE OLD WORDS BEFORE STARTING A NEW SESSION
         previousWords = voiceTranscript;
       });
 
@@ -69,11 +67,9 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
           partialResults: true,
           onResult: (result) {
             setState(() {
-              // 2. GLUE THE OLD WORDS AND NEW WORDS TOGETHER
               if (previousWords.isEmpty) {
                 voiceTranscript = result.recognizedWords;
               } else {
-                // Add a space between the old sentence and the new sentence
                 voiceTranscript = "$previousWords ${result.recognizedWords}";
               }
             });
