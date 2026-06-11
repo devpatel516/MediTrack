@@ -16,7 +16,7 @@ void main() async{
         channelKey: 'appointment_channel',
         channelName: 'Appointments',
         channelDescription: 'Reminders for upcoming visits',
-        defaultColor: const Color(0xFF2CA29E), // Your teal color!
+        defaultColor: const Color(0xFF2CA29E), 
         ledColor: Colors.white,
         importance: NotificationImportance.High,
       )

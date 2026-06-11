@@ -6,6 +6,7 @@ import '../api_service.dart';
 import 'login_screen.dart';
 import 'doctor_appointments_screen.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
+
 class DoctorDashboard extends StatefulWidget {
   const DoctorDashboard({super.key});
 
@@ -26,7 +27,8 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
   String voiceTranscript = "";
   bool speechAvailable = false;
   String previousWords = "";
-  bool extracting=false;
+  bool extracting = false;
+
   @override
   void initState() {
     super.initState();
@@ -62,18 +64,22 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       });
 
       speech.listen(
-          pauseFor: const Duration(seconds: 10),
-          listenFor: const Duration(minutes: 1),
+        onResult: (result) {
+          setState(() {
+            if (previousWords.isEmpty) {
+              voiceTranscript = result.recognizedWords;
+            } else {
+              voiceTranscript = "$previousWords ${result.recognizedWords}";
+            }
+          });
+        },
+        listenOptions: stt.SpeechListenOptions(
+          listenFor: const Duration(minutes: 5),
+          pauseFor: const Duration(seconds: 15),
+          listenMode: stt.ListenMode.dictation,
+          cancelOnError: false,
           partialResults: true,
-          onResult: (result) {
-            setState(() {
-              if (previousWords.isEmpty) {
-                voiceTranscript = result.recognizedWords;
-              } else {
-                voiceTranscript = "$previousWords ${result.recognizedWords}";
-              }
-            });
-          }
+        ),
       );
     } else {
       setState(() => isListening = false);
@@ -111,12 +117,13 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       medicines.removeAt(index);
     });
   }
-  void extract() async{
+
+  void extract() async {
     if (voiceTranscript.trim().isEmpty) return;
     setState(() {
-      extracting=true;
+      extracting = true;
     });
-    try{
+    try {
       final Map<String, dynamic> result = await ApiService().aiService(voiceTranscript);
       setState(() {
         String diagnosis = result['diagnosis'] ?? 'No diagnosis found';
@@ -125,19 +132,22 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
         extracting = false;
       });
       print('here in dd');
-    }catch(e){
+    } catch (e) {
       setState(() {
         extracting = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
+
   void submitVisit() async {
     if (patientEmailController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Patient Email is required')));
       return;
     }
-    setState(() { isSaving = true; });
+    setState(() {
+      isSaving = true;
+    });
 
     List<Map<String, String>> medicinesPayload = medicines.map((med) {
       return {
@@ -183,7 +193,7 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
           }
           medicines.clear();
           addMedicine();
-          selectedDate = null; // Reset date picker too
+          selectedDate = null;
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to save visit.')));
@@ -192,7 +202,9 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
 
-    setState(() { isSaving = false; });
+    setState(() {
+      isSaving = false;
+    });
   }
 
   String formatDate(DateTime date) {
@@ -211,12 +223,15 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Doctor Dashboard",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
-        backgroundColor: Color.fromRGBO(44, 162, 158, 1.0),
+        title: const Text(
+          "Doctor Dashboard",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: const Color.fromRGBO(44, 162, 158, 1.0),
         actions: [
           IconButton(
             color: Colors.white,
-            icon: const Icon(Icons.list_alt), // The new list icon
+            icon: const Icon(Icons.list_alt),
             onPressed: () {
               Navigator.push(
                 context,
@@ -242,21 +257,27 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Create New Visit", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold,color: Color.fromRGBO(
-                45, 161, 155, 1.0))),
+            const Text(
+              "Create New Visit",
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromRGBO(45, 161, 155, 1.0)),
+            ),
             const SizedBox(height: 20),
-
             TextField(
               controller: patientEmailController,
-              decoration: InputDecoration(labelText: 'Patient Email',labelStyle: TextStyle(color: Color.fromRGBO(
-                  45, 161, 155, 1.0),fontWeight: FontWeight.w500,fontStyle: FontStyle.italic), enabledBorder: customBorder, focusedBorder: customBorder),
+              decoration: InputDecoration(
+                  labelText: 'Patient Email',
+                  labelStyle: const TextStyle(
+                      color: Color.fromRGBO(45, 161, 155, 1.0),
+                      fontWeight: FontWeight.w500,
+                      fontStyle: FontStyle.italic),
+                  enabledBorder: customBorder,
+                  focusedBorder: customBorder),
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 15),
-
-            // ==========================================
-            // AI VOICE EXTRACTOR CARD (FIXED LAYOUT)
-            // ==========================================
             Card(
               color: isListening ? Colors.red.shade50 : Colors.blue.shade50,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -271,35 +292,40 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Voice Extractor', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,color:Color.fromRGBO(44, 162, 158, 1.0))),
+                              const Text(
+                                'Voice Extractor',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color.fromRGBO(44, 162, 158, 1.0)),
+                              ),
                               Text(
                                 isListening ? "Listening... Speak now" : "Tap mic to start dictating",
-                                style: TextStyle(color: isListening ? Colors.red : Colors.grey.shade700, fontSize: 13),
+                                style: TextStyle(
+                                    color: isListening ? Colors.red : Colors.grey.shade700,
+                                    fontSize: 13),
                               ),
                             ],
                           ),
-                          // Moved the Mic button out of the column so it aligns to the right!
                           FloatingActionButton(
                             onPressed: listen,
                             mini: true,
-                            backgroundColor: isListening ? Colors.red : Color.fromRGBO(44, 162, 158, 1.0),
+                            backgroundColor: isListening ? Colors.red : const Color.fromRGBO(44, 162, 158, 1.0),
                             child: Icon(isListening ? Icons.mic : Icons.mic_none, color: Colors.white),
                           ),
                           FloatingActionButton(
-                            onPressed: (){
+                            onPressed: () {
                               setState(() {
-                                previousWords="";
-                                voiceTranscript="";
+                                previousWords = "";
+                                voiceTranscript = "";
                               });
                             },
                             mini: true,
                             backgroundColor: Colors.white,
-                            child: Icon(Icons.cancel, color: Color.fromRGBO(44, 162, 158, 1.0)),
+                            child: const Icon(Icons.cancel, color: Color.fromRGBO(44, 162, 158, 1.0)),
                           )
                         ],
                       ),
-
-                      // Added this block to actually show the text the doctor is speaking
                       if (voiceTranscript.isNotEmpty) ...[
                         const SizedBox(height: 15),
                         Container(
@@ -307,43 +333,52 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                           decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.blue.shade100)
-                          ),
+                              border: Border.all(color: Colors.blue.shade100)),
                           child: Text(
                             voiceTranscript,
                             style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
                           ),
                         ),
                       ],
-
                       const SizedBox(height: 20),
-                      extracting ? Center(child:CircularProgressIndicator(),) :
-                      ElevatedButton.icon(
+                      extracting
+                          ? const Center(child: CircularProgressIndicator())
+                          : ElevatedButton.icon(
                         onPressed: isListening ? null : () {
                           extract();
                         },
                         icon: const Icon(Icons.auto_awesome),
                         label: const Text("Extract Notes"),
-                        style: ElevatedButton.styleFrom(backgroundColor: Color.fromRGBO(44, 162, 158, 1.0), foregroundColor: Colors.white),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color.fromRGBO(44, 162, 158, 1.0),
+                            foregroundColor: Colors.white),
                       )
                     ],
                   )),
             ),
             const SizedBox(height: 15),
-
             TextField(
               controller: notesController,
               maxLines: 3,
-              decoration: InputDecoration(labelText: 'Doctor Notes / Diagnosis',labelStyle: TextStyle(fontStyle: FontStyle.italic,color: Color.fromRGBO(
-                  45, 161, 155, 1.0),fontWeight: FontWeight.w500),enabledBorder: customBorder, focusedBorder: customBorder),
+              decoration: InputDecoration(
+                  labelText: 'Doctor Notes / Diagnosis',
+                  labelStyle: const TextStyle(
+                      fontStyle: FontStyle.italic,
+                      color: Color.fromRGBO(45, 161, 155, 1.0),
+                      fontWeight: FontWeight.w500),
+                  enabledBorder: customBorder,
+                  focusedBorder: customBorder),
             ),
-
             const Padding(
               padding: EdgeInsets.only(top: 30, bottom: 10),
-              child: Text("Prescriptions", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: Color.fromRGBO(44, 162, 158, 1.0))),
+              child: Text(
+                "Prescriptions",
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromRGBO(44, 162, 158, 1.0)),
+              ),
             ),
-
-            // --- DYNAMIC MEDICINE LIST BUILDER ---
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -362,29 +397,48 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                             onTap: () => removeMedicine(index),
                             child: const Icon(Icons.cancel, color: Colors.red),
                           ),
-
                         TextField(
                           controller: medicines[index]['name'],
-                          decoration: InputDecoration(labelText: 'Medicine Name',labelStyle: TextStyle(fontStyle: FontStyle.italic,color: Color.fromRGBO(
-                              45, 161, 155, 1.0),fontWeight: FontWeight.w500),isDense: true, enabledBorder: customBorder, focusedBorder: customBorder),
+                          decoration: InputDecoration(
+                              labelText: 'Medicine Name',
+                              labelStyle: const TextStyle(
+                                  fontStyle: FontStyle.italic,
+                                  color: Color.fromRGBO(45, 161, 155, 1.0),
+                                  fontWeight: FontWeight.w500),
+                              isDense: true,
+                              enabledBorder: customBorder,
+                              focusedBorder: customBorder),
                         ),
                         const SizedBox(height: 10),
-
                         Row(
                           children: [
                             Expanded(
                               child: TextField(
                                 controller: medicines[index]['timing'],
-                                decoration: InputDecoration(labelText: 'Timing (e.g. After Food)',labelStyle: TextStyle(fontStyle: FontStyle.italic,color: Color.fromRGBO(
-                                    45, 161, 155, 1.0),fontWeight: FontWeight.w500),isDense: true, enabledBorder: customBorder, focusedBorder: customBorder),
+                                decoration: InputDecoration(
+                                    labelText: 'Timing (e.g. After Food)',
+                                    labelStyle: const TextStyle(
+                                        fontStyle: FontStyle.italic,
+                                        color: Color.fromRGBO(45, 161, 155, 1.0),
+                                        fontWeight: FontWeight.w500),
+                                    isDense: true,
+                                    enabledBorder: customBorder,
+                                    focusedBorder: customBorder),
                               ),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: TextField(
                                 controller: medicines[index]['schedule'],
-                                decoration: InputDecoration(labelText: 'Schedule',labelStyle: TextStyle(fontStyle: FontStyle.italic,color: Color.fromRGBO(
-                                    45, 161, 155, 1.0),fontWeight: FontWeight.w500),isDense: true, enabledBorder: customBorder, focusedBorder: customBorder),
+                                decoration: InputDecoration(
+                                    labelText: 'Schedule',
+                                    labelStyle: const TextStyle(
+                                        fontStyle: FontStyle.italic,
+                                        color: Color.fromRGBO(45, 161, 155, 1.0),
+                                        fontWeight: FontWeight.w500),
+                                    isDense: true,
+                                    enabledBorder: customBorder,
+                                    focusedBorder: customBorder),
                               ),
                             ),
                           ],
@@ -395,45 +449,50 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
                 );
               },
             ),
-
-            // ADD MEDICINE BUTTON
             TextButton.icon(
               onPressed: addMedicine,
               icon: const Icon(Icons.add, color: Color.fromRGBO(44, 162, 158, 1.0)),
-              label: const Text("Add Another Medicine", style: TextStyle(color: Color.fromRGBO(44, 162, 158, 1.0))),
+              label: const Text(
+                "Add Another Medicine",
+                style: TextStyle(color: Color.fromRGBO(44, 162, 158, 1.0)),
+              ),
             ),
-
             const SizedBox(height: 20),
-
-            // DATE PICKER
             Row(
               children: [
                 ElevatedButton.icon(
-                    onPressed: () async {
-                      final DateTime? picked = await showDatePicker(
-                          context: context,
-                          firstDate: DateTime.now(), // Fixed so doctor can't pick a past date for next visit
-                          lastDate: DateTime(2100),
-                          initialDate: DateTime.now());
-                      if (picked != null) {
-                        setState(() {
-                          selectedDate = picked;
-                        });
-                      }
-                    },
-                    icon: const Icon(Icons.calendar_today,color: Color.fromRGBO(44, 162, 158, 1.0),),
-                    label: const Text('Pick Follow-up Date',style:TextStyle(color: Color.fromRGBO(44, 162, 158, 1.0)),)
+                  onPressed: () async {
+                    final DateTime? picked = await showDatePicker(
+                        context: context,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2100),
+                        initialDate: DateTime.now());
+                    if (picked != null) {
+                      setState(() {
+                        selectedDate = picked;
+                      });
+                    }
+                  },
+                  icon: const Icon(
+                    Icons.calendar_today,
+                    color: Color.fromRGBO(44, 162, 158, 1.0),
+                  ),
+                  label: const Text(
+                    'Pick Follow-up Date',
+                    style: TextStyle(color: Color.fromRGBO(44, 162, 158, 1.0)),
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Text(
                   selectedDate == null ? 'No date selected' : formatDate(selectedDate!),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500,color: Color.fromRGBO(
-                      45, 161, 155, 1.0)),
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color.fromRGBO(45, 161, 155, 1.0)),
                 )
               ],
             ),
             const SizedBox(height: 30),
-
             isSaving
                 ? const Center(child: CircularProgressIndicator())
                 : SizedBox(
@@ -441,11 +500,12 @@ class _DoctorDashboardState extends State<DoctorDashboard> {
               child: ElevatedButton(
                 onPressed: submitVisit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color.fromRGBO(44, 162, 158, 1.0),
+                  backgroundColor: const Color.fromRGBO(44, 162, 158, 1.0),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.all(16),
                 ),
-                child: const Text('Save Visit Record', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: const Text('Save Visit Record',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(height: 50),

@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService{
-  static const String baseUrl='http://10.0.2.2:3000/api';
+  static const String baseUrl='https://meditrack-api-gxb1.onrender.com/api';
   final storage=const FlutterSecureStorage();
 
   Future<bool> register(String name, String email, String password, String role) async {
@@ -14,7 +14,7 @@ class ApiService{
         'name': name,
         'email': email,
         'password': password,
-        'role': role, // 'doctor' or 'patient'
+        'role': role, 
       }),
     );
 
